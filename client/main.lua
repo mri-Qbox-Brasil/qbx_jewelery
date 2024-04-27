@@ -65,7 +65,7 @@ if not config.useTarget then
                     qbx.drawText3d({text = locale('text.electrical'), coords = electricalCoords})
                 elseif not config.useDrawText and not hasShownText then
                     hasShownText = true
-                    lib.showTextUI(locale('text.electrical'), {position = 'left-center'})
+                    lib.showTextUI(locale('text.electrical'), {position = 'right-center'})
                 end
                 if IsControlJustPressed(0, 38) then
                     lib.callback('qb-jewelery:callback:electricalbox', false, function(CanHack)
@@ -187,7 +187,7 @@ else
                     qbx.drawText3d({text = locale('text.cabinet'), coords = sharedConfig.vitrines[closestVitrine].coords})
                 elseif not config.useDrawText and not hasShownText then
                     hasShownText = true
-                    lib.showTextUI(locale('text.cabinet'), {position = 'left-center'})
+                    lib.showTextUI(locale('text.cabinet'), {position = 'right-center'})
                 end
                 if IsControlJustPressed(0, 38) then
                     lib.callback('qb-jewelery:callback:cabinet', false, function(CanSmash)

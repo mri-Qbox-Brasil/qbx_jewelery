@@ -1,4 +1,4 @@
-# qbx_jewelery — Manual
+# qbx_jewelery: Manual
 
 Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta, quebra as vitrines com arma na mão e leva as joias, disparando alarme e alerta policial.
 
@@ -23,7 +23,7 @@ Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta,
 |---|---|---|
 | `qbx_core` | Sim | `GetPlayer`, `Notify`, `GetDutyCountType('leo')`, `GetQBPlayers` |
 | `ox_lib` | Sim | Callbacks, zonas, textUI, locale |
-| `ox_inventory` | Sim | Checagem/consumo do item de hack e entrega das joias |
+| `ox_inventory` | Sim | Checagem/consumo do item de hack, entrega das joias e drop no chão do que não couber no inventário |
 | `ox_doorlock` | Sim | Porta da joalheria é destrancada e retrancada por `getDoorFromName` / `ox_doorlock:setState` |
 | `ultra-voltlab` | Sim | Minigame do hack da caixa elétrica. Sem ele, o hack nunca conclui |
 | `ox_target` | Não | Só quando `useTarget = true` |
@@ -39,11 +39,11 @@ Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta,
    ```
    ensure qbx_jewelery
    ```
-3. Cadastre no `ox_doorlock` a porta da joalheria com o nome definido em `doorlock.name` (padrão `vangelico_jewellery`). Sem essa porta cadastrada, o hack quebra ao tentar destrancar.
+3. Cadastre no `ox_doorlock` a porta da joalheria com o nome definido em `doorlock.name` (padrão `vangelico_jewellery`). Sem essa porta cadastrada, o hack não destranca nada.
 4. Garanta que os itens existam no `ox_inventory`:
    - Item do hack: `electronickit`
    - Recompensas: `rolex`, `diamond_ring`, `goldchain`, `10kgoldchain`
-5. **Conflitos** — não rode junto com o `qb-jewelery` original: os dois usam os mesmos eventos e callbacks (`qb-jewelery:*`).
+5. **Conflitos**: não rode junto com outro roubo da Vangelico (ex.: o `qb-jewelery` original). Os dois usariam a mesma porta e as mesmas vitrines.
 
 ---
 
@@ -53,7 +53,7 @@ Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta,
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `fingerprintChance` | number | Sim | Chance (0–100) de deixar digital ao quebrar uma vitrine. Não deixa digital se estiver de luvas |
+| `fingerprintChance` | number | Sim | Chance (0 a 100) de deixar digital ao quebrar uma vitrine. Não deixa digital se estiver de luvas |
 | `useDrawText` | bool | Sim | `true` usa texto 3D no mundo; `false` usa `lib.showTextUI` |
 | `useTarget` | bool | Sim | `true` usa `ox_target` na caixa elétrica e nas vitrines; `false` usa proximidade + tecla `E` |
 | `alarmDuration` | ms | Sim | Duração do alarme `JEWEL_STORE_HEIST_ALARMS` (padrão 240000 = 4 min) |
@@ -67,7 +67,7 @@ Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta,
 | `notEnoughPoliceNotify` | bool | Sim | Notifica o jogador quando não há policiais suficientes |
 | `reward.minAmount` | number | Sim | Mínimo de sorteios de item por vitrine quebrada |
 | `reward.maxAmount` | number | Sim | Máximo de sorteios de item por vitrine quebrada |
-| `reward.items` | array de `{name, min, max}` | Sim | Pool de joias. A cada sorteio, um item é escolhido e entregue em quantidade `math.random(min, max)` |
+| `reward.items` | array de `{name, min, max}` | Sim | Pool de joias. A cada sorteio, um item é escolhido e entregue em quantidade `math.random(min, max)`. O que não couber no inventário cai no chão (`CustomDrop`) |
 | `allowedWeapons` | tabela `[hash] = true` | Sim | Armas que permitem quebrar a vitrine. O padrão cobre SMGs, escopetas e rifles |
 
 ### `config/shared.lua`
@@ -92,7 +92,7 @@ Roubo à joalheria Vangelico: hackeia a caixa elétrica para destrancar a porta,
 | `coords` | `vec3` | Posição da vitrine |
 | `heading` | number | Heading que o personagem assume ao quebrar |
 | `rayFire` | string | Nome do objeto RayFire quebrável do mapa. `DES_Jewel_Cab4` usa a animação frontal; os demais usam a animação de cima |
-| `isOpened` / `isBusy` | bool | Estado inicial — mantenha `false` |
+| `isOpened` / `isBusy` | bool | Estado inicial: mantenha `false` |
 
 O config traz um conjunto alternativo de vitrines (K4AMBI) comentado no final do arquivo, para quem usa a MLO da K4MB1.
 
@@ -103,11 +103,22 @@ O config traz um conjunto alternativo de vitrines (K4AMBI) comentado no final do
 1. O jogador chega à caixa elétrica com um `electronickit`. O servidor valida o item, a distância (2m) e a quantidade de policiais em serviço.
 2. O item é consumido (se `loseItemOnUse`) e o minigame do `ultra-voltlab` roda por um tempo sorteado entre `hackTime.min` e `hackTime.max`, com cena sincronizada de animação na caixa.
 3. Sucesso destranca a porta via `ox_doorlock`. Falha ou timeout apenas libera a caixa para uma nova tentativa.
-4. Dentro da loja, com uma arma permitida em mãos, o jogador quebra as vitrines. Cada quebra roda a animação, o efeito RayFire, a partícula e o som — sincronizados para todos os jogadores num raio de 20 metros.
-5. Cada vitrine quebrada entrega joias aleatórias e pode deixar uma digital. A primeira vitrine quebrada dispara o alarme e o alerta policial.
+4. Dentro da loja, com uma arma permitida em mãos, o jogador quebra as vitrines. Cada quebra roda a animação, o efeito RayFire, a partícula e o som, sincronizados para todos os jogadores num raio de 20 metros.
+5. Cada vitrine quebrada entrega joias aleatórias (o que não couber no inventário cai no chão) e pode deixar uma digital. A primeira vitrine quebrada dispara o alarme e o alerta policial.
 6. Após `timeOut` ms do alarme, a porta é retrancada, as vitrines são restauradas e a joalheria fica disponível novamente.
 
 O raio de 80 metros em torno da primeira vitrine controla a criação da caixa elétrica e a manutenção do estado visual das vitrines já quebradas.
+
+### Proteções do servidor
+
+O servidor guarda uma sessão por jogador para o hack e para cada vitrine, e só aceita a conclusão dentro de uma janela de tempo:
+
+| Etapa | Tempo mínimo | Tempo máximo | Fora da janela |
+|---|---|---|---|
+| Hack da caixa elétrica | 5 s | 90 s | O sucesso é ignorado. Depois do máximo, outro jogador pode assumir a caixa |
+| Quebra de vitrine | 2,5 s | 15 s | A vitrine é liberada sem entregar joias |
+
+Só o jogador que abriu a sessão pode concluí-la. Se ele desconectar, a caixa elétrica e a vitrine são liberadas na hora. O estado das vitrines é enviado ao jogador quando ele carrega o personagem (`QBCore:Server:OnPlayerLoaded`).
 
 ---
 
@@ -133,29 +144,31 @@ A joalheria é marcada como ocupada (`SetActivityBusy 'jewellery', true`) durant
 
 ## Entrypoints para outros recursos
 
-### Callbacks (`lib.callback`) — servidor
+### Callbacks (`lib.callback`) no servidor
 
 ```lua
--- Valida item, polícia e distância; consome o item e libera o hack
-lib.callback('qb-jewelery:callback:electricalbox', false, cb)
+-- Valida item, polícia e distância; consome o item e abre a sessão do hack
+lib.callback('qbx_jewelery:callback:electricalbox', false, cb)
 
--- Valida arma, estado da vitrine e distância; libera a quebra
-lib.callback('qb-jewelery:callback:cabinet', false, cb, vitrineIndex)
+-- Valida arma, estado da vitrine e distância; abre a sessão da quebra
+lib.callback('qbx_jewelery:callback:cabinet', false, cb, vitrineIndex)
 ```
 
 ### Eventos de servidor
 
+Só têm efeito dentro de uma sessão aberta pelo callback correspondente (ver [Proteções do servidor](#proteções-do-servidor)).
+
 ```lua
-TriggerServerEvent('qb-jewelery:server:endcabinet')        -- conclui a quebra, entrega joias, dispara alarme
-TriggerServerEvent('qb-jewellery:server:succeshackdoor')   -- hack bem-sucedido: destranca a porta
-TriggerServerEvent('qb-jewellery:server:failedhackdoor')   -- hack falhou: libera a caixa elétrica
+TriggerServerEvent('qbx_jewelery:server:endcabinet')       -- conclui a quebra, entrega joias, dispara alarme
+TriggerServerEvent('qbx_jewelery:server:succeshackdoor')   -- hack bem-sucedido: destranca a porta
+TriggerServerEvent('qbx_jewelery:server:failedhackdoor')   -- hack falhou: libera a caixa elétrica
 ```
 
 ### Eventos de cliente
 
 ```lua
-TriggerClientEvent('qb-jewelery:client:alarm', -1)                  -- inicia o alarme
-TriggerClientEvent('qb-jewelery:client:syncconfig', -1, vitrines)   -- sincroniza o estado das vitrines
+TriggerClientEvent('qbx_jewelery:client:alarm', -1)                  -- inicia o alarme
+TriggerClientEvent('qbx_jewelery:client:syncconfig', -1, vitrines)   -- sincroniza o estado das vitrines
 ```
 
 ---
@@ -164,7 +177,7 @@ TriggerClientEvent('qb-jewelery:client:syncconfig', -1, vitrines)   -- sincroniz
 
 Strings via `ox_lib` locale, em `locales/`:
 
-`cs`, `en`, `fr`, `pt-br`
+`cs`, `de`, `en`, `es`, `fr`, `ja`, `nl`, `pl`, `pt`, `pt-br`, `ro`, `tr`
 
 ```
 setr ox:locale "pt-br"
@@ -177,13 +190,13 @@ setr ox:locale "pt-br"
 ```
 qbx_jewelery/
 ├── client/
-│   └── main.lua          — caixa elétrica, minigame do hack, quebra das vitrines (RayFire, partícula, som), alarme
+│   └── main.lua          # caixa elétrica, minigame do hack, quebra das vitrines (RayFire, partícula, som), alarme
 ├── server/
-│   └── main.lua          — validações, consumo do item, doorlock, recompensas, alarme e cooldown
+│   └── main.lua          # validações, sessões, consumo do item, doorlock, recompensas, alarme e cooldown
 ├── config/
-│   ├── client.lua        — digital, target/drawtext, duração do alarme
-│   ├── server.lua        — cooldown, polícia mínima, pool de joias, armas permitidas
-│   └── shared.lua        — caixa elétrica, doorlock, lista das 20 vitrines
-├── locales/              — cs, en, fr, pt-br (.json)
+│   ├── client.lua        # digital, target/drawtext, duração do alarme
+│   ├── server.lua        # cooldown, polícia mínima, pool de joias, armas permitidas
+│   └── shared.lua        # caixa elétrica, doorlock, lista das 20 vitrines
+├── locales/              # traduções (.json)
 └── fxmanifest.lua
 ```

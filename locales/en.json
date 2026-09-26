@@ -2,7 +2,8 @@
     "text": {
         "electrical": "[E] - Hack Doorlock",
         "electricalTarget": "Hack Doorlock",
-        "cabinet": "[E] - Smash Cabinet"
+        "cabinet": "[E] - Smash Cabinet",
+        "cabinetTarget": "Smash Cabinet"
     },
     "notify": {
         "busy": "Someone is already on it",
@@ -10,6 +11,7 @@
         "noweapon": "You don't have a weapon in hand",
         "noitem": "You don't have an %s with you",
         "police": "Vangelico Store robbery reported",
-        "nopolice": "Not Enough Police (%s Required)"
+        "nopolice": "Not Enough Police (%s Required)",
+        "reward_dropped": "You dropped some jewels"
     }
 }
